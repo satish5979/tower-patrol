@@ -514,7 +514,7 @@ async function startNav(id) {
   $('#nav-panel').hidden = false; $('#nav-title').textContent = `ટાવર ${t.name}` + (t.line ? ` · ${t.line}` : '');
   $('#nav-gmaps').href = gmapsUrl(t);
   S.follow = true; $('#btn-locate').classList.add('on');
-  keepAwake(true); drawTowers(); updateNav(true);
+  keepAwake(true); drawTowers(); navLabels(); updateNav(true);
   if (S.pos) fitRoute(); else map.setView([t.lat, t.lon], 17);
 }
 function stopNav() { S.nav = null; routeLayer.clearLayers(); $('#nav-panel').hidden = true; drawTowers(); keepAwake(!!S.rec); }
@@ -582,6 +582,20 @@ function drawArrow() {
 }
 $('#nav-stop').onclick = stopNav;
 $('#nav-fit').onclick = fitRoute;
+function neighbourTower(step) {   // next/previous tower on the same line, by tower number
+  const cur = S.nav && S.nav.tower; if (!cur) return null;
+  const line = S.towers.filter(t => (t.line || '') === (cur.line || '')).sort((a, b) => natCmp(a.name, b.name));
+  const i = line.findIndex(t => t.id === cur.id);
+  return line[i + step] || null;
+}
+function navLabels() {
+  const n = neighbourTower(1), p = neighbourTower(-1);
+  $('#nav-next').hidden = !n; $('#nav-prev').hidden = !p;
+  if (n) $('#nav-next').textContent = `ટાવર ${n.name} ▶`;
+  if (p) $('#nav-prev').textContent = `◀ ${p.name}`;
+}
+$('#nav-next').onclick = () => { const t = neighbourTower(1); if (t) startNav(t.id); };
+$('#nav-prev').onclick = () => { const t = neighbourTower(-1); if (t) startNav(t.id); };
 
 /* ---------------- export / import ---------------- */
 const xmlEsc = esc;

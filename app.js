@@ -77,13 +77,40 @@ const TILES = {
   osm: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max: 19, attr: '© OpenStreetMap' },
   sat: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', max: 19, maxNative: 18, attr: 'Imagery © Esri' },
 };
+/* tiles are kept in the Cache API as they are seen, so the map also shows offline (works in browser and in the APK) */
+const TILE_CACHE = 'tp-tiles-v2';
+const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+async function cachedTileBlob(url) {
+  if (!('caches' in window)) return null;
+  const c = await caches.open(TILE_CACHE);
+  let res = await c.match(url);
+  if (res && res.type === 'opaque') res = null;
+  if (!res) {
+    res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('tile ' + res.status);
+    await c.put(url, res.clone());
+  }
+  return res.blob();
+}
+const CachedTiles = L.TileLayer.extend({
+  createTile(coords, done) {
+    const img = document.createElement('img');
+    img.alt = ''; img.setAttribute('role', 'presentation');
+    const url = this.getTileUrl(coords);
+    img.onload = () => { if (img.dataset.blob) URL.revokeObjectURL(img.src); done(null, img); };
+    img.onerror = e => done(e, img);
+    cachedTileBlob(url).then(b => { if (!b) throw 0; img.dataset.blob = '1'; img.src = URL.createObjectURL(b); })
+      .catch(() => { img.src = url; });   // CORS blocked or offline: plain load (browser cache may still have it)
+    return img;
+  }
+});
 const map = L.map('map', { zoomControl: false, attributionControl: true, maxZoom: 20 }).setView([22.6, 71.8], 7);
 map.attributionControl.setPrefix(false);
 let baseLayer;
 function setLayer(k) {
   if (baseLayer) map.removeLayer(baseLayer);
   const t = TILES[k];
-  baseLayer = L.tileLayer(t.url, { maxZoom: 20, maxNativeZoom: t.maxNative || 19, attribution: t.attr, crossOrigin: false }).addTo(map);
+  baseLayer = new CachedTiles(t.url, { maxZoom: 20, maxNativeZoom: t.maxNative || 19, attribution: t.attr }).addTo(map);
   $('#btn-layer').textContent = k === 'osm' ? 'સેટેલાઇટ' : 'નકશો';
   S.settings.layer = k;
 }
@@ -580,10 +607,17 @@ let pendingFile = null;
 function offerFile(name, text, mime) {
   pendingFile = new File([text], name, { type: mime });
   $('#sh-name').textContent = name + ' · ' + Math.max(1, Math.round(pendingFile.size / 1024)) + ' KB';
-  $('#sh-share').hidden = !(navigator.canShare && navigator.canShare({ files: [pendingFile] }));
+  pendingFile.text = text;
+  $('#sh-share').hidden = !IS_NATIVE && !(navigator.canShare && navigator.canShare({ files: [pendingFile] }));
+  $('#sh-dl').hidden = IS_NATIVE;
   $('#dlg-share').showModal();
 }
-$('#sh-share').onclick = async () => { try { await navigator.share({ files: [pendingFile], title: pendingFile.name }); $('#dlg-share').close(); } catch (e) { if (e.name !== 'AbortError') toast('શેર ન થયું, ડાઉનલોડ કરો'); } };
+async function nativeShare() {   // APK: write the file to app cache, then open Android's share sheet
+  const P = window.Capacitor.Plugins;
+  const w = await P.Filesystem.writeFile({ path: pendingFile.name, data: pendingFile.text, directory: 'CACHE', encoding: 'utf8' });
+  await P.Share.share({ title: pendingFile.name, files: [w.uri], dialogTitle: 'ફાઇલ મોકલો / સાચવો' });
+}
+$('#sh-share').onclick = async () => { try { if (IS_NATIVE) { await nativeShare(); $('#dlg-share').close(); return; } await navigator.share({ files: [pendingFile], title: pendingFile.name }); $('#dlg-share').close(); } catch (e) { if (e.name !== 'AbortError' && !/cancel/i.test(e.message || '')) toast('શેર ન થયું, ડાઉનલોડ કરો'); } };
 $('#sh-dl').onclick = () => {
   const a = document.createElement('a'); a.href = URL.createObjectURL(pendingFile); a.download = pendingFile.name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -708,7 +742,7 @@ $('#btn-offline').onclick = async e => {
   let urls = [...set].map(k => { const [z, x, y] = k.split('/'); return tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y); });
   if (urls.length > 3000) { urls = urls.slice(0, 3000); }
   btn.disabled = true; let done = 0, fail = 0;
-  const work = async () => { while (urls.length) { const u = urls.pop(); try { await fetch(u, { mode: 'no-cors' }); } catch (_) { fail++; } done++; if (done % 10 === 0) st.textContent = `સાચવાય છે… ${done} ટાઇલ`; } };
+  const work = async () => { while (urls.length) { const u = urls.pop(); try { if (!(await cachedTileBlob(u))) throw 0; } catch (_) { fail++; } done++; if (done % 10 === 0) st.textContent = `સાચવાય છે… ${done} ટાઇલ`; } };
   const total = urls.length;
   st.textContent = `સાચવાય છે… 0 / ${total}`;
   await Promise.all([work(), work(), work(), work()]);
@@ -794,5 +828,5 @@ async function storageInfo() {
   drawTracks(); drawTowers(); fillLineList(); renderList(); fitAll();
   startGPS(); startCompass();
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (!IS_NATIVE && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

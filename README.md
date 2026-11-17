@@ -8,3 +8,9 @@
 - નકશાની ટાઇલ્સ જોવાતાં જ ફોનમાં સચવાય છે; "નકશો ફોનમાં સાચવો" થી આખા વિસ્તારની ટાઇલ્સ પહેલેથી સાચવી શકાય.
 
 Plain HTML/JS, no build step. Leaflet 1.9.4 is vendored in `lib/`. Hosted with GitHub Pages from the `main` branch root.
+
+## Android APK
+
+દરેક push પછી GitHub Actions APK બનાવે છે: https://github.com/satish5979/tower-patrol/releases/download/latest-apk/tower-patrol.apk
+
+The APK is a Capacitor wrapper around the same files (`android/build.sh`). It is signed with the committed `android/debug.keystore` so that every new build installs over the previous one.

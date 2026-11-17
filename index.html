@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ટાવર પેટ્રોલ</title>
+<meta name="theme-color" content="#12202B">
+<meta name="description" content="ટ્રાન્સમિશન ટાવર પેટ્રોલિંગ: રસ્તો રેકોર્ડ કરો, ટાવર ઉમેરો અને પછી સીધા ટાવર સુધી પહોંચો.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" class="pylon" aria-hidden="true"><path d="M12 2 7 22M12 2l5 20M8.6 15h6.8M9.6 10.5h4.8M10.6 6h2.8M4 6h16M5 10.5h14M8.6 15l5.8 7M15.4 15l-5.8 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <div><b>ટાવર પેટ્રોલ</b><small>Tower Patrol</small></div>
+    </div>
+    <button id="gps-chip" class="chip" type="button" aria-live="polite"><span class="dot"></span><span id="gps-text">GPS શોધે છે…</span></button>
+  </header>
+
+  <main class="mapwrap">
+    <div id="map" aria-label="નકશો"></div>
+    <div class="fabs">
+      <button id="btn-layer" class="fab" type="button" title="નકશો / સેટેલાઇટ">સેટેલાઇટ</button>
+      <button id="btn-locate" class="fab" type="button" title="મારું સ્થાન">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+    </div>
+
+    <section id="nav-panel" class="navpanel" hidden aria-live="polite">
+      <div class="nav-row">
+        <div class="arrow-wrap" id="arrow-wrap">
+          <svg viewBox="0 0 100 100" id="nav-arrow" aria-hidden="true"><path d="M50 6 80 88 50 70 20 88Z"/></svg>
+        </div>
+        <div class="nav-info">
+          <div class="nav-title" id="nav-title">ટાવર</div>
+          <div class="nav-dist" id="nav-dist">—</div>
+          <div class="nav-sub" id="nav-sub"></div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a id="nav-gmaps" class="btn small" href="#" target="_blank" rel="noopener">Google Maps</a>
+        <button id="nav-fit" class="btn small" type="button">આખો રસ્તો</button>
+        <button id="nav-stop" class="btn small danger-o" type="button">બંધ કરો</button>
+      </div>
+    </section>
+
+    <div id="banner" class="banner" hidden></div>
+  </main>
+
+  <section class="sheet" id="sheet">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="patrol" class="tab on" type="button">પેટ્રોલિંગ<small>Patrol</small></button>
+      <button role="tab" data-tab="towers" class="tab" type="button">ટાવર<small>Towers</small></button>
+      <button role="tab" data-tab="data" class="tab" type="button">ડેટા<small>Backup</small></button>
+    </div>
+
+    <div class="tabbody" id="tab-patrol">
+      <div id="patrol-idle">
+        <p class="hint">પહેલી વાર ચાલીને જાઓ ત્યારે <b>પેટ્રોલિંગ શરૂ કરો</b> દબાવો. તમે જે રસ્તે ચાલશો તે નોંધાશે. ટાવર પાસે પહોંચો ત્યારે <b>અહીં ટાવર ઉમેરો</b> દબાવો.</p>
+        <label class="field"><span>લાઇનનું નામ <small>Line name</small></span>
+          <input id="in-line" list="line-list" placeholder="દા.ત. 66KV અમરેલી–લાઠી" autocomplete="off"></label>
+        <datalist id="line-list"></datalist>
+        <div class="row">
+          <button id="btn-start" class="btn primary big" type="button">▶ પેટ્રોલિંગ શરૂ કરો</button>
+        </div>
+        <div class="row">
+          <button id="btn-add-tower-idle" class="btn" type="button">📍 અહીં ટાવર ઉમેરો</button>
+        </div>
+        <p class="hint small">નકશા પર આંગળી દબાવી રાખો (long press) તો તે જગ્યાએ પણ ટાવર ઉમેરી શકાય.</p>
+      </div>
+      <div id="patrol-rec" hidden>
+        <div class="recbar"><span class="recdot"></span><b id="rec-title">રેકોર્ડિંગ ચાલુ</b><span id="rec-line" class="muted"></span></div>
+        <div class="stats">
+          <div><span id="st-dist">0 મી</span><small>અંતર</small></div>
+          <div><span id="st-time">0:00</span><small>સમય</small></div>
+          <div><span id="st-towers">0</span><small>ટાવર</small></div>
+          <div><span id="st-acc">—</span><small>GPS ચોકસાઈ</small></div>
+        </div>
+        <button id="btn-add-tower" class="btn primary big" type="button">📍 અહીં ટાવર ઉમેરો</button>
+        <div class="row two">
+          <button id="btn-pause" class="btn" type="button">⏸ થોભો</button>
+          <button id="btn-stop" class="btn danger" type="button">■ પૂરું કરો</button>
+        </div>
+        <p class="hint small">રેકોર્ડિંગ વખતે સ્ક્રીન ચાલુ રાખો અને ઍપ ખુલ્લી રાખો. ફોન લોક થશે તો તે સમયનો રસ્તો નોંધાશે નહીં.</p>
+      </div>
+    </div>
+
+    <div class="tabbody" id="tab-towers" hidden>
+      <input id="in-search" class="search" type="search" placeholder="ટાવર શોધો: નંબર કે લાઇન" autocomplete="off">
+      <div id="tower-list"></div>
+    </div>
+
+    <div class="tabbody" id="tab-data" hidden>
+      <div class="group">
+        <h3>બેકઅપ / Export</h3>
+        <p class="hint small">બધો ડેટા ફક્ત આ ફોનમાં છે. અઠવાડિયે એક વાર બેકઅપ લઈ WhatsApp કે Drive માં રાખો.</p>
+        <div class="row wrap">
+          <button class="btn" data-export="json" type="button">પૂરો બેકઅપ (.json)</button>
+          <button class="btn" data-export="gpx" type="button">GPX</button>
+          <button class="btn" data-export="kml" type="button">KML (Google Earth)</button>
+          <button class="btn" data-export="csv" type="button">ટાવર લિસ્ટ (Excel .csv)</button>
+        </div>
+      </div>
+      <div class="group">
+        <h3>Import</h3>
+        <p class="hint small">GPX, KML, બેકઅપ JSON અથવા CSV (નામ, lat, lon, લાઇન) ફાઇલ પસંદ કરો. જૂનો ડેટા સચવાઈ રહેશે.</p>
+        <label class="btn filebtn">ફાઇલ પસંદ કરો<input id="in-file" type="file" accept=".gpx,.kml,.json,.csv,.txt,application/gpx+xml,application/vnd.google-earth.kml+xml,application/json,text/csv"></label>
+      </div>
+      <div class="group">
+        <h3>ઑફલાઇન નકશો</h3>
+        <p class="hint small">નેટ ચાલુ હોય ત્યારે દબાવો. તમારા રસ્તા અને ટાવર આસપાસનો નકશો ફોનમાં સચવાશે, પછી નેટ વગર પણ દેખાશે.</p>
+        <button id="btn-offline" class="btn" type="button">નકશો ફોનમાં સાચવો</button>
+        <div id="offline-status" class="hint small"></div>
+      </div>
+      <div class="group">
+        <h3>રેકોર્ડ કરેલા રસ્તા</h3>
+        <div id="track-list"></div>
+      </div>
+      <div class="group" id="demo-group">
+        <h3>ડેમો</h3>
+        <p class="hint small">ઍપ કેવી રીતે ચાલે છે તે જોવા નમૂનાનો ડેટા લોડ કરો. તે પછી કાઢી શકાય છે.</p>
+        <div class="row wrap">
+          <button id="btn-demo" class="btn" type="button">ડેમો ડેટા લોડ કરો</button>
+          <button id="btn-demo-clear" class="btn danger-o" type="button">ડેમો ડેટા કાઢો</button>
+        </div>
+      </div>
+      <p class="hint small" id="storage-info"></p>
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg-tower">
+  <form method="dialog" id="form-tower">
+    <h2 id="dt-title">નવો ટાવર</h2>
+    <label class="field"><span>ટાવર નંબર / નામ <small>Tower no.</small></span><input id="f-name" required autocomplete="off"></label>
+    <label class="field"><span>લાઇન <small>Line</small></span><input id="f-line" list="line-list" autocomplete="off"></label>
+    <label class="field"><span>નોંધ <small>Note</small></span><input id="f-note" placeholder="દા.ત. ખેતરમાં, ગેટ ડાબી બાજુ" autocomplete="off"></label>
+    <div class="row two">
+      <label class="field"><span>Lat</span><input id="f-lat" inputmode="decimal" required></label>
+      <label class="field"><span>Lon</span><input id="f-lon" inputmode="decimal" required></label>
+    </div>
+    <p class="hint small" id="f-acc"></p>
+    <div class="row two">
+      <button value="cancel" class="btn" type="button" id="f-cancel">રદ કરો</button>
+      <button value="ok" class="btn primary" type="submit">સાચવો</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-detail">
+  <div id="detail-body"></div>
+</dialog>
+
+<dialog id="dlg-share">
+  <h2 id="sh-title">ફાઇલ તૈયાર છે</h2>
+  <p class="hint" id="sh-name"></p>
+  <div class="row two">
+    <button class="btn primary" id="sh-share" type="button">શેર કરો (WhatsApp/Drive)</button>
+    <button class="btn" id="sh-dl" type="button">ડાઉનલોડ</button>
+  </div>
+  <div class="row"><button class="btn" id="sh-close" type="button">બંધ કરો</button></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="lib/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

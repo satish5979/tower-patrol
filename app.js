@@ -332,6 +332,7 @@ function openTowerForm(opts) {
   $('#f-acc').textContent = opts.acc ? `GPS ચોકસાઈ ±${Math.round(opts.acc)} મીટર` + (opts.acc > 20 ? ' (થોડી વાર ઊભા રહો તો ચોકસાઈ વધશે)' : '') : (opts.manual ? 'નકશા પરથી પસંદ કરેલી જગ્યા' : '');
   $('#dlg-tower').dataset.acc = opts.acc || '';
   $('#dlg-tower').showModal();
+  setTitle();
   setTimeout(() => $('#f-name').focus(), 50);
 }
 function addTowerHere() {
@@ -357,6 +358,9 @@ $('#form-tower').addEventListener('submit', async e => {
   if (navigator.vibrate) navigator.vibrate(60);
 });
 $('#f-cancel').onclick = () => $('#dlg-tower').close();
+$('#f-x').onclick = () => $('#dlg-tower').close();
+function setTitle() { const n = $('#f-name').value.trim(); $('#dt-title').textContent = (editId ? 'ટાવર સુધારો' : 'નવું ટાવર લોકેશન સેવ કરો'); if (n) $('#dt-title').textContent = `"${n}" ` + $('#dt-title').textContent; }
+$('#f-name').addEventListener('input', setTitle);
 function showLL() { const a = parseFloat($('#f-lat').value), b = parseFloat($('#f-lon').value); $('#f-ll').textContent = isFinite(a) && isFinite(b) ? `${a.toFixed(6)}, ${b.toFixed(6)}` : '—'; }
 ['#f-lat', '#f-lon'].forEach(s => $(s).addEventListener('input', showLL));
 function setFormLL(lat, lon, note) { $('#f-lat').value = r6(lat); $('#f-lon').value = r6(lon); showLL(); $('#f-acc').textContent = note; $('#dlg-tower').dataset.acc = ''; }

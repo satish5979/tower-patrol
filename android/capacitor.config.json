@@ -1,6 +1,6 @@
 {
   "appId": "com.towerpatrol.app",
-  "appName": "ટાવર પેટ્રોલ",
+  "appName": "લાઇન પેટ્રોલિંગ",
   "webDir": "www",
   "server": { "androidScheme": "https", "hostname": "towerpatrol.app" },
   "android": { "appendUserAgent": "TowerPatrol/1.0", "adjustMarginsForEdgeToEdge": "force" }

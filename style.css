@@ -146,4 +146,7 @@ dialog form,#detail-body{display:flex;flex-direction:column;gap:10px}
 .latlon input{font-family:var(--mono);font-size:14px;padding:8px 10px}
 .ttag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--bg);border:1px solid var(--line);color:var(--fg);margin-right:4px}
 .tw.t-tension span{background:#B3261E;color:#fff}.tw.t-deadend span{background:#6A1B9A;color:#fff}.tw.t-gantry span{background:#1B5E20;color:#fff}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--head);color:var(--accent);margin:-16px -16px 2px;padding:14px 16px;border-radius:16px 16px 0 0}
+.dlg-head h2{margin:0;color:var(--accent);font-size:18px}
+.xbtn{background:none;border:0;color:#9FB0B9;font-size:22px;min-width:40px;min-height:40px;cursor:pointer}
 #patrol-idle,#patrol-rec{display:flex;flex-direction:column;gap:10px}

@@ -50,6 +50,9 @@ function bearing(a, b) {
   return (deg(Math.atan2(y, x)) + 360) % 360;
 }
 const DIRS = ['ઉત્તર (N)', 'ઉત્તર-પૂર્વ (NE)', 'પૂર્વ (E)', 'દક્ષિણ-પૂર્વ (SE)', 'દક્ષિણ (S)', 'દક્ષિણ-પશ્ચિમ (SW)', 'પશ્ચિમ (W)', 'ઉત્તર-પશ્ચિમ (NW)'];
+const TYPES = { suspension: 'Suspension (સસ્પેન્શન - સીધો)', tension: 'Tension (ટેન્શન - ખૂણાનો)', deadend: 'Dead End (ડેડ એન્ડ)', gantry: 'Gantry / Substation (સબસ્ટેશન)' };
+const TSHORT = { suspension: 'સસ્પેન્શન', tension: 'ટેન્શન', deadend: 'ડેડ એન્ડ', gantry: 'સબસ્ટેશન' };
+function typeKey(v) { v = String(v || '').toLowerCase(); if (TYPES[v]) return v; if (/tens|ટેન્શન|angle|ખૂણ/.test(v)) return 'tension'; if (/dead|ડેડ/.test(v)) return 'deadend'; if (/gant|sub|સબ/.test(v)) return 'gantry'; if (/susp|સસ્પ/.test(v)) return 'suspension'; return ''; }
 const dirName = b => DIRS[Math.round(b / 45) % 8];
 function fmtDist(m) {
   if (!isFinite(m)) return '—';
@@ -122,7 +125,7 @@ let meMarker, meAcc;
 
 const PYLON = '<svg viewBox="0 0 24 24"><path d="M12 2 7 22M12 2l5 20M8.6 15h6.8M9.6 10.5h4.8M10.6 6h2.8M4 6h16M5 10.5h14M8.6 15l5.8 7M15.4 15l-5.8 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 function towerIcon(t, target) {
-  return L.divIcon({ className: 'tw-ic', iconSize: [0, 0], html: `<div class="tw${target ? ' target' : ''}"><span>${esc(t.name)}</span>${PYLON}</div>` });
+  return L.divIcon({ className: 'tw-ic', iconSize: [0, 0], html: `<div class="tw${target ? ' target' : ''}${t.type ? ' t-' + t.type : ''}"><span>${esc(t.name)}</span>${PYLON}</div>` });
 }
 function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 
@@ -318,12 +321,14 @@ function openTowerForm(opts) {
   editId = opts.id || null;
   const t = editId ? S.towers.find(x => x.id === editId) : null;
   const line = t ? t.line : (S.rec ? S.rec.line : ($('#in-line').value.trim() || S.settings.lastLine));
-  $('#dt-title').textContent = t ? 'ટાવર સુધારો' : 'નવો ટાવર';
+  $('#dt-title').textContent = t ? 'ટાવર સુધારો' : 'નવું ટાવર લોકેશન સેવ કરો';
+  const ty = t ? (t.type || 'suspension') : 'suspension';
+  $$('input[name=f-type]').forEach(r => r.checked = r.value === ty);
   $('#f-name').value = t ? t.name : nextTowerName(line);
   $('#f-line').value = line || '';
   $('#f-note').value = t ? (t.note || '') : '';
   const lat = t ? t.lat : opts.lat, lon = t ? t.lon : opts.lon;
-  $('#f-lat').value = lat != null ? r6(lat) : ''; $('#f-lon').value = lon != null ? r6(lon) : '';
+  $('#f-lat').value = lat != null ? r6(lat) : ''; $('#f-lon').value = lon != null ? r6(lon) : ''; showLL();
   $('#f-acc').textContent = opts.acc ? `GPS ચોકસાઈ ±${Math.round(opts.acc)} મીટર` + (opts.acc > 20 ? ' (થોડી વાર ઊભા રહો તો ચોકસાઈ વધશે)' : '') : (opts.manual ? 'નકશા પરથી પસંદ કરેલી જગ્યા' : '');
   $('#dlg-tower').dataset.acc = opts.acc || '';
   $('#dlg-tower').showModal();
@@ -339,7 +344,8 @@ $('#form-tower').addEventListener('submit', async e => {
   const name = $('#f-name').value.trim(), lat = parseFloat($('#f-lat').value), lon = parseFloat($('#f-lon').value);
   if (!name) { toast('ટાવર નંબર લખો'); return; }
   if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) { toast('Lat/Lon બરાબર નથી'); return; }
-  const data = { name, line: $('#f-line').value.trim(), note: $('#f-note').value.trim(), lat: r6(lat), lon: r6(lon) };
+  const type = ($$('input[name=f-type]').find(r => r.checked) || {}).value || 'suspension';
+  const data = { name, type, line: $('#f-line').value.trim(), note: $('#f-note').value.trim(), lat: r6(lat), lon: r6(lon) };
   if (editId) Object.assign(S.towers.find(x => x.id === editId), data);
   else {
     S.towers.push({ id: uid(), ...data, acc: parseFloat($('#dlg-tower').dataset.acc) || null, created: Date.now() });
@@ -351,6 +357,11 @@ $('#form-tower').addEventListener('submit', async e => {
   if (navigator.vibrate) navigator.vibrate(60);
 });
 $('#f-cancel').onclick = () => $('#dlg-tower').close();
+function showLL() { const a = parseFloat($('#f-lat').value), b = parseFloat($('#f-lon').value); $('#f-ll').textContent = isFinite(a) && isFinite(b) ? `${a.toFixed(6)}, ${b.toFixed(6)}` : '—'; }
+['#f-lat', '#f-lon'].forEach(s => $(s).addEventListener('input', showLL));
+function setFormLL(lat, lon, note) { $('#f-lat').value = r6(lat); $('#f-lon').value = r6(lon); showLL(); $('#f-acc').textContent = note; $('#dlg-tower').dataset.acc = ''; }
+$('#f-use-center').onclick = () => { const c = map.getCenter(); setFormLL(c.lat, c.lng, 'નકશાના વચ્ચેની જગ્યા લીધી (નકશો ખસેડી ટાવર વચ્ચે લાવીને દબાવો)'); };
+$('#f-use-gps').onclick = () => { const f = bestFix(); if (!f) { toast('GPS લોકેશન હજુ મળ્યું નથી'); return; } setFormLL(f.lat, f.lon, `GPS ચોકસાઈ ±${Math.round(f.acc)} મીટર`); $('#dlg-tower').dataset.acc = f.acc; };
 
 function openDetail(id) {
   const t = S.towers.find(x => x.id === id); if (!t) return;
@@ -359,6 +370,7 @@ function openDetail(id) {
   $('#detail-body').innerHTML = `
     <h2>ટાવર ${esc(t.name)}</h2>
     ${t.line ? `<div class="muted">${esc(t.line)}</div>` : ''}
+    ${t.type ? `<div><b>પ્રકાર:</b> ${esc(TYPES[t.type] || t.type)}</div>` : ''}
     ${t.note ? `<div>${esc(t.note)}</div>` : ''}
     <div class="coords" id="dt-coords">${ll}</div>
     ${d != null ? `<div class="muted">અહીંથી સીધું અંતર: <b>${fmtDist(d)}</b> · ${dirName(bearing(S.pos, t))}</div>` : ''}
@@ -408,7 +420,7 @@ function renderList() {
     groups[g].sort((a, b) => natCmp(a.name, b.name)).map(t => `
       <button class="titem" data-id="${t.id}" type="button">
         <span class="tnum">${esc(String(t.name).slice(0, 6))}</span>
-        <span class="tmain"><b>ટાવર ${esc(t.name)}</b><small>${esc(t.note || (t.demo ? 'ડેમો' : ''))}</small></span>
+        <span class="tmain"><b>ટાવર ${esc(t.name)}</b><small>${t.type ? `<span class="ttag">${TSHORT[t.type] || ''}</span>` : ''}${esc(t.note || (t.demo ? 'ડેમો' : ''))}</small></span>
         <span class="tdist">${S.pos ? fmtDist(dist(S.pos, t)) : ''}</span>
       </button>`).join('')).join('');
 }
@@ -576,7 +588,7 @@ const xmlEsc = esc;
 const iso = s => new Date(s * 1000).toISOString();
 function toGPX() {
   let o = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Tower Patrol" xmlns="http://www.topografix.com/GPX/1/1">\n';
-  for (const t of S.towers) o += `<wpt lat="${t.lat}" lon="${t.lon}"><name>${xmlEsc(t.name)}</name>${t.note ? `<desc>${xmlEsc(t.note)}</desc>` : ''}${t.line ? `<type>${xmlEsc(t.line)}</type>` : ''}<sym>Tower</sym></wpt>\n`;
+  for (const t of S.towers) o += `<wpt lat="${t.lat}" lon="${t.lon}"><name>${xmlEsc(t.name)}</name>${t.note ? `<desc>${xmlEsc(t.note)}</desc>` : ''}${t.line ? `<type>${xmlEsc(t.line)}</type>` : ''}${t.type ? `<cmt>${t.type}</cmt>` : ''}<sym>Tower</sym></wpt>\n`;
   for (const tr of S.tracks) {
     o += `<trk><name>${xmlEsc(tr.name || '')}</name>${tr.line ? `<type>${xmlEsc(tr.line)}</type>` : ''}\n`;
     for (const s of tr.segments) o += '<trkseg>' + s.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}">${p[2] ? `<time>${iso(p[2])}</time>` : ''}</trkpt>`).join('') + '</trkseg>\n';
@@ -591,7 +603,7 @@ function toKML() {
     '<Style id="trk"><LineStyle><color>ff006aff</color><width>4</width></LineStyle></Style>\n';
   for (const ln of lines) {
     o += `<Folder><name>${xmlEsc(ln || 'લાઇન વગર')}</name>\n`;
-    for (const t of S.towers.filter(x => (x.line || '') === ln)) o += `<Placemark><name>${xmlEsc(t.name)}</name>${t.note ? `<description>${xmlEsc(t.note)}</description>` : ''}<styleUrl>#tw</styleUrl><Point><coordinates>${t.lon},${t.lat},0</coordinates></Point></Placemark>\n`;
+    for (const t of S.towers.filter(x => (x.line || '') === ln)) o += `<Placemark><name>${xmlEsc(t.name)}</name>${t.note || t.type ? `<description>${xmlEsc([TYPES[t.type], t.note].filter(Boolean).join(' · '))}</description>` : ''}<styleUrl>#tw</styleUrl><Point><coordinates>${t.lon},${t.lat},0</coordinates></Point></Placemark>\n`;
     for (const tr of S.tracks.filter(x => (x.line || '') === ln)) o += `<Placemark><name>${xmlEsc(tr.name || 'રસ્તો')}</name><styleUrl>#trk</styleUrl><MultiGeometry>` + tr.segments.map(s => '<LineString><tessellate>1</tessellate><coordinates>' + s.map(p => `${p[1]},${p[0]},0`).join(' ') + '</coordinates></LineString>').join('') + '</MultiGeometry></Placemark>\n';
     o += '</Folder>\n';
   }
@@ -599,7 +611,7 @@ function toKML() {
 }
 function toCSV() {
   const q = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v ?? '');
-  return '﻿name,line,lat,lon,note\n' + [...S.towers].sort((a, b) => natCmp(a.line, b.line) || natCmp(a.name, b.name)).map(t => [t.name, t.line || '', t.lat, t.lon, t.note || ''].map(q).join(',')).join('\n') + '\n';
+  return '﻿name,line,type,lat,lon,note\n' + [...S.towers].sort((a, b) => natCmp(a.line, b.line) || natCmp(a.name, b.name)).map(t => [t.name, t.line || '', TYPES[t.type] || '', t.lat, t.lon, t.note || ''].map(q).join(',')).join('\n') + '\n';
 }
 function toJSON() { return JSON.stringify({ app: 'tower-patrol', version: 1, exported: new Date().toISOString(), towers: S.towers.filter(t => !t.demo), tracks: S.tracks.filter(t => !t.demo) }); }
 
@@ -649,7 +661,7 @@ function importCSV(text) {
   const rows = parseCSV(text.replace(/^﻿/, '')); if (!rows.length) return { towers: [], tracks: [] };
   const h = rows[0].map(x => x.trim().toLowerCase());
   const find = (...names) => h.findIndex(x => names.some(n => x === n || x.startsWith(n)));
-  let iN = find('name', 'tower', 'loc', 'no', 'નામ', 'ટાવર'), iLa = find('lat', 'latitude', 'y'), iLo = find('lon', 'lng', 'long', 'x'), iL = find('line', 'લાઇન', 'feeder'), iNo = find('note', 'remark', 'desc', 'નોંધ');
+  let iN = find('name', 'tower', 'loc', 'no', 'નામ', 'ટાવર'), iLa = find('lat', 'latitude', 'y'), iLo = find('lon', 'lng', 'long', 'x'), iL = find('line', 'લાઇન', 'feeder'), iNo = find('note', 'remark', 'desc', 'નોંધ'), iT = find('type', 'પ્રકાર');
   let body = rows.slice(1);
   if (iLa < 0 || iLo < 0) { // no header: assume name,lat,lon[,line,note]
     body = rows; iN = 0; iLa = 1; iLo = 2; iL = 3; iNo = 4;
@@ -658,14 +670,14 @@ function importCSV(text) {
   for (const r of body) {
     const lat = parseFloat(r[iLa]), lon = parseFloat(r[iLo]);
     if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180) || (!lat && !lon)) continue;
-    towers.push({ name: (r[iN] ?? '').trim() || String(towers.length + 1), line: iL >= 0 ? (r[iL] || '').trim() : '', note: iNo >= 0 ? (r[iNo] || '').trim() : '', lat, lon });
+    towers.push({ name: (r[iN] ?? '').trim() || String(towers.length + 1), line: iL >= 0 ? (r[iL] || '').trim() : '', type: iT >= 0 ? typeKey(r[iT]) : '', note: iNo >= 0 ? (r[iNo] || '').trim() : '', lat, lon });
   }
   return { towers, tracks: [] };
 }
 function txt(el, sel) { const x = el.getElementsByTagName(sel)[0]; return x ? x.textContent.trim() : ''; }
 function importGPX(text) {
   const doc = new DOMParser().parseFromString(text, 'application/xml');
-  const towers = [...doc.getElementsByTagName('wpt')].map(w => ({ name: txt(w, 'name') || '?', note: txt(w, 'desc') || txt(w, 'cmt'), line: txt(w, 'type'), lat: +w.getAttribute('lat'), lon: +w.getAttribute('lon') }));
+  const towers = [...doc.getElementsByTagName('wpt')].map(w => ({ name: txt(w, 'name') || '?', note: txt(w, 'desc') || (typeKey(txt(w, 'cmt')) ? '' : txt(w, 'cmt')), type: typeKey(txt(w, 'cmt')), line: txt(w, 'type'), lat: +w.getAttribute('lat'), lon: +w.getAttribute('lon') }));
   const tracks = [];
   for (const t of doc.getElementsByTagName('trk')) {
     const segments = [...t.getElementsByTagName('trkseg')].map(s => [...s.getElementsByTagName('trkpt')].map(p => { const tm = txt(p, 'time'); return [+p.getAttribute('lat'), +p.getAttribute('lon'), tm ? Math.round(Date.parse(tm) / 1000) : 0, 0]; })).filter(s => s.length > 1);
@@ -699,7 +711,7 @@ async function mergeImport(data) {
     if (!(Math.abs(t.lat) <= 90 && Math.abs(t.lon) <= 180)) continue;
     const dup = S.towers.find(x => x.id === t.id || (x.name === t.name && (x.line || '') === (t.line || '') && dist(x, t) < 8));
     if (dup) continue;
-    S.towers.push({ id: t.id || uid(), name: String(t.name), line: t.line || '', note: t.note || '', lat: r6(+t.lat), lon: r6(+t.lon), acc: t.acc || null, created: t.created || Date.now() }); nt++;
+    S.towers.push({ id: t.id || uid(), name: String(t.name), line: t.line || '', type: typeKey(t.type), note: t.note || '', lat: r6(+t.lat), lon: r6(+t.lon), acc: t.acc || null, created: t.created || Date.now() }); nt++;
   }
   for (const tr of data.tracks || []) {
     if (tr.id && S.tracks.some(x => x.id === tr.id)) continue;
@@ -760,7 +772,7 @@ function makeDemo() {
   segs.push(road.map((p, i) => [...p, 0, 0]));
   for (let k = 0; k < 8; k++) {
     const tw = destPt(destPt(start, 78, 200 + k * 360), 348, 260 + (k % 3) * 40);
-    towers.push({ id: 'demo-t' + k, name: String(101 + k), line, note: k === 3 ? 'ખેતરમાં, કૂવા પાસે' : '', lat: tw[0], lon: tw[1], created: Date.now() + k, demo: true });
+    towers.push({ id: 'demo-t' + k, name: String(101 + k), line, type: k === 0 ? 'gantry' : k === 4 ? 'tension' : k === 7 ? 'deadend' : 'suspension', note: k === 3 ? 'ખેતરમાં, કૂવા પાસે' : '', lat: tw[0], lon: tw[1], created: Date.now() + k, demo: true });
     const ri = Math.round((200 + k * 360) / 75); const from = road[Math.min(ri, road.length - 1)];
     const spur = []; for (let j = 0; j <= 10; j++) { const f = j / 10; spur.push([r6(from[0] + (tw[0] - from[0]) * f + Math.sin(j) * 0.00008), r6(from[1] + (tw[1] - from[1]) * f), 0, 0]); }
     segs.push(spur);

@@ -135,4 +135,15 @@ dialog form,#detail-body{display:flex;flex-direction:column;gap:10px}
 .me-wrap{position:relative}
 .me-cone{position:absolute;left:50%;top:50%;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:18px solid rgb(30 136 229/.75);
   transform-origin:50% 100%;margin-left:-9px;margin-top:-18px}
+.gpsbox{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.coords-line{font-family:var(--mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.gpsbtns{display:flex;gap:6px}
+.ttype{border:1px solid var(--line);border-radius:10px;padding:6px 10px 8px;margin:0;display:flex;flex-direction:column}
+.ttype legend{font-weight:700;font-size:14px;padding:0 4px}
+.ttype label{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;font-weight:600;cursor:pointer}
+.ttype input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.latlon .field{font-size:12px}
+.latlon input{font-family:var(--mono);font-size:14px;padding:8px 10px}
+.ttag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--bg);border:1px solid var(--line);color:var(--fg);margin-right:4px}
+.tw.t-tension span{background:#B3261E;color:#fff}.tw.t-deadend span{background:#6A1B9A;color:#fff}.tw.t-gantry span{background:#1B5E20;color:#fff}
 #patrol-idle,#patrol-rec{display:flex;flex-direction:column;gap:10px}

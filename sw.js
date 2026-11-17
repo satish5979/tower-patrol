@@ -1,5 +1,5 @@
 /* Offline support: app shell cached on install. Map tiles are cached by the page itself (Cache API 'tp-tiles-v2'). */
-const SHELL = 'tp-shell-v3';
+const SHELL = 'tp-shell-v4';
 const FILES = ['./', 'index.html', 'app.js', 'style.css', 'manifest.webmanifest', 'lib/leaflet.js', 'lib/leaflet.css', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -136,11 +136,24 @@
 
 <dialog id="dlg-tower">
   <form method="dialog" id="form-tower">
-    <h2 id="dt-title">નવો ટાવર</h2>
+    <h2 id="dt-title">નવું ટાવર લોકેશન સેવ કરો</h2>
+    <div class="gpsbox">
+      <div><small>પસંદ કરેલ GPS લોકેશન:</small><div class="coords-line" id="f-ll">—</div></div>
+      <div class="gpsbtns">
+        <button class="btn small" type="button" id="f-use-gps">મારું GPS</button>
+        <button class="btn small" type="button" id="f-use-center">નકશાનું સેન્ટર</button>
+      </div>
+    </div>
+    <fieldset class="ttype"><legend>ટાવરનો પ્રકાર <small>Tower type</small></legend>
+      <label><input type="radio" name="f-type" value="suspension" checked> <span>Suspension <small>(સસ્પેન્શન - સીધો)</small></span></label>
+      <label><input type="radio" name="f-type" value="tension"> <span>Tension <small>(ટેન્શન - ખૂણાનો)</small></span></label>
+      <label><input type="radio" name="f-type" value="deadend"> <span>Dead End <small>(ડેડ એન્ડ)</small></span></label>
+      <label><input type="radio" name="f-type" value="gantry"> <span>Gantry / Substation <small>(સબસ્ટેશન)</small></span></label>
+    </fieldset>
     <label class="field"><span>ટાવર નંબર / નામ <small>Tower no.</small></span><input id="f-name" required autocomplete="off"></label>
     <label class="field"><span>લાઇન <small>Line</small></span><input id="f-line" list="line-list" autocomplete="off"></label>
     <label class="field"><span>નોંધ <small>Note</small></span><input id="f-note" placeholder="દા.ત. ખેતરમાં, ગેટ ડાબી બાજુ" autocomplete="off"></label>
-    <div class="row two">
+    <div class="row two latlon">
       <label class="field"><span>Lat</span><input id="f-lat" inputmode="decimal" required></label>
       <label class="field"><span>Lon</span><input id="f-lon" inputmode="decimal" required></label>
     </div>

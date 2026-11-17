@@ -1,1 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#12202B"/><g fill="none" stroke="#F5C21B" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" transform="translate(256 262) scale(15) translate(-12 -12)"><path d="M12 2 7 22M12 2l5 20M8.6 15h6.8M9.6 10.5h4.8M10.6 6h2.8M4 6h16M5 10.5h14M8.6 15l5.8 7M15.4 15l-5.8 7" stroke-width="1.7"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B4F9C"/><stop offset=".55" stop-color="#2C7BD0"/><stop offset="1" stop-color="#F6A623"/>
+    </linearGradient>
+    <radialGradient id="sun" cx=".72" cy=".78" r=".45">
+      <stop offset="0" stop-color="#FFE29A" stop-opacity=".95"/><stop offset="1" stop-color="#FFE29A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3E8E41"/><stop offset="1" stop-color="#1E5A24"/>
+    </linearGradient>
+    <linearGradient id="steelL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#B9C3CC"/>
+    </linearGradient>
+    <linearGradient id="steelR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E9AA6"/><stop offset="1" stop-color="#4E5B67"/>
+    </linearGradient>
+    <linearGradient id="pin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF7A59"/><stop offset=".6" stop-color="#E5322D"/><stop offset="1" stop-color="#9E1414"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="6" dy="10" stdDeviation="8" flood-color="#0A1A33" flood-opacity=".55"/>
+    </filter>
+    <clipPath id="r"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <rect width="512" height="512" fill="url(#sun)"/>
+    <!-- far hills -->
+    <path d="M0 410 Q120 360 230 400 T512 385 V512 H0Z" fill="#2F7A3A" opacity=".75"/>
+    <path d="M0 440 Q160 400 300 435 T512 425 V512 H0Z" fill="url(#ground)"/>
+    <!-- path walked to the tower -->
+    <path d="M60 512 C120 470 190 470 230 452 S300 430 300 430" fill="none" stroke="#F3D9A4" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 26"/>
+    <!-- power lines -->
+    <g fill="none" stroke="#0F2440" stroke-width="3.5" opacity=".75">
+      <path d="M-10 150 Q90 185 196 156"/><path d="M316 156 Q420 185 522 150"/>
+      <path d="M-10 214 Q90 246 206 220"/><path d="M306 220 Q420 246 522 214"/>
+    </g>
+    <!-- 3D lattice tower: lit left face, shaded right face -->
+    <g filter="url(#sh)">
+      <path d="M256 52 L222 432 L256 432Z" fill="url(#steelL)"/>
+      <path d="M256 52 L290 432 L256 432Z" fill="url(#steelR)"/>
+      <g stroke="#2B3742" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M256 52 L210 436 M256 52 L302 436"/>
+        <path d="M232 300 L280 360 M280 300 L232 360 M226 360 L286 432 M286 360 L226 432"/>
+        <path d="M238 230 L274 300 M274 230 L238 300 M244 160 L268 230 M268 160 L244 230"/>
+        <path d="M232 300 H280 M226 360 H286"/>
+      </g>
+      <!-- cross arms -->
+      <path d="M180 150 H332 L320 166 H192Z" fill="#E7ECF0" stroke="#2B3742" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M190 214 H322 L310 230 H202Z" fill="#E7ECF0" stroke="#2B3742" stroke-width="6" stroke-linejoin="round"/>
+      <g fill="#F5C21B" stroke="#7A5A00" stroke-width="3">
+        <rect x="183" y="164" width="12" height="20" rx="3"/><rect x="317" y="164" width="12" height="20" rx="3"/>
+        <rect x="193" y="228" width="12" height="20" rx="3"/><rect x="307" y="228" width="12" height="20" rx="3"/>
+      </g>
+    </g>
+    <!-- GPS pin -->
+    <g filter="url(#sh)" transform="translate(356 236)">
+      <path d="M58 0 C26 0 0 25 0 57 C0 98 58 150 58 150 C58 150 116 98 116 57 C116 25 90 0 58 0Z" fill="url(#pin)" stroke="#fff" stroke-width="7"/>
+      <circle cx="58" cy="56" r="22" fill="#fff"/>
+      <circle cx="58" cy="56" r="10" fill="#E5322D"/>
+      <ellipse cx="40" cy="30" rx="22" ry="12" fill="#fff" opacity=".35" transform="rotate(-30 40 30)"/>
+    </g>
+    <!-- top gloss -->
+    <rect width="512" height="230" fill="url(#gloss)"/>
+  </g>
+</svg>
